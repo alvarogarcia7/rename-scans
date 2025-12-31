@@ -10,6 +10,8 @@ Behavior mirrors the original shell script:
 - By default prints the mv commands (dry-run). Use --apply to actually rename.
 """
 import argparse
+import contextlib
+import dataclasses
 import datetime
 import itertools
 import os
@@ -17,6 +19,10 @@ import re
 import shutil
 import subprocess
 import sys
+from pathlib import Path
+
+from app.domain import MoveResult
+from app.mode_two_sides import two_sides
 
 
 def natural_key(s: str):
@@ -43,34 +49,26 @@ def find_files_in_dir(dirpath):
     return entries
 
 
-def run_git_snapshot(dirpath, date_now):
+def run_git_snapshot(dirpath, msg):
     # Try to create a minimal snapshot similar to the shell script; ignore failures
-    try:
-        subprocess.run(["git", "init", "."], cwd=dirpath, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run(["git", "add", "-f", "."], cwd=dirpath, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        msg = f"initial commit: before rename of {date_now}"
-        subprocess.run(["git", "commit", "-am", msg], cwd=dirpath, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except Exception:
-        # best-effort only
+    result = subprocess.run(["git", "init", "."], cwd=dirpath, check=True)
+    assert result.returncode == 0, f"git init failed: {result.stderr} - {result.stdout}"
+    result = subprocess.run(["git", "add", "-f", "."], cwd=dirpath)
+    if result.returncode == 0:
         pass
-
-
-def strip_trailing_number_groups(base: str, times: int = 2) -> str:
-    # Remove trailing groups like " 1" or "_1" or "-1" up to `times` occurrences
-    for _ in range(times):
-        new = re.sub(r"[\s_-]*\d+$", "", base)
-        if new == base:
-            break
-        base = new
-    return base
-
+    elif result.returncode == 1:
+        print("No new files to commit, skipping git add")
+    else:
+        print(f"Warning: git add failed: {result.stderr} - {result.stdout}")
+    subprocess.run(["git", "commit", "--allow-empty", "-am", msg], cwd=dirpath, check=True)
+    assert result.returncode == 0, f"git commit failed: {result.stderr} - {result.stdout}"
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
 
     parser = argparse.ArgumentParser(description="Rename scanned files for two-sided scans")
-    parser.add_argument("--mode", default="", help="mode to run; supported: two-sides", required=True, choices=["two-sides"])
+    parser.add_argument("--mode", default="", help="mode to run; supported", required=True, choices=["two_sides"])
     parser.add_argument("--apply", action="store_true", help="perform the renames instead of printing them (dry-run)")
     parser.add_argument("target", help="file or directory to process")
     args = parser.parse_args(argv)
@@ -95,104 +93,37 @@ def main(argv=None):
         dirpath = os.path.abspath(target)
         files = find_files_in_dir(dirpath)
 
+    # Exclude files if they belong to an array
+    excluded_files = [".DS_Store", ".gitignore", "Thumbs.db"]
+    files = [f for f in files if os.path.basename(f) not in excluded_files]
+    
+    
+
     # Remove trailing slash
     dirpath = dirpath.rstrip("/")
+    dir = Path(dirpath)
 
-    # Group by trailing numeric parts
-    files0 = []
-    files1 = []
-    files2 = []
 
-    for f in files:
-        if not f:
-            continue
-        filename = os.path.basename(f)
-        base, _ = os.path.splitext(filename)
-        if re.match(r"^(.+)[ _-]+(\d+)[ _-]+(\d+)$", base):
-            files2.append(f)
-        elif re.match(r"^(.+)[ _-]+(\d+)$", base):
-            files1.append(f)
-        else:
-            files0.append(f)
-
-    print(f"Files with no trailing number: {len(files0)}")
-    print(f"Files with one trailing number: {len(files1)}")
-    print(f"Files with two trailing numbers: {len(files2)}")
-
-    files_ordered = []
-    files_ordered.extend(files0)
-    files2.reverse()
-    # Zip files2 and files1 together, interleaving them
-    for f2, f1 in itertools.zip_longest(files2, files1, fillvalue=None):
-        if f2 is not None:
-            files_ordered.append(f2)
-        if f1 is not None:
-            files_ordered.append(f1)
-
-    if len(files_ordered) == 0:
-        print(f"No files to rename in {dirpath}")
-        return 0
-
-    date_now = datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-    # attempt git snapshot (best-effort)
-    run_git_snapshot(dirpath, date_now)
-
-    total_files = len(files_ordered)
-    if total_files < 10:
-        padding = 1
-    elif total_files < 100:
-        padding = 2
-    elif total_files < 1000:
-        padding = 3
+    date_of_operation = now()
+    msg = f"initial commit: before rename of {date_of_operation}"
+    run_git_snapshot(dirpath, msg)
+    if mode == "two_sides":
+        result = two_sides(files, dir, apply_changes)
     else:
-        padding = 4
+        result = MoveResult(1, 0, messages=["unknown mode"])
 
-    i = 1
-    for f in files_ordered:
-        if not f:
-            continue
-        filename = os.path.basename(f)
-        name_no_ext, ext = os.path.splitext(filename)
-        ext = ext[1:] if ext.startswith('.') else ext
+    for message in result.messages:
+        print(message)
 
-        # remove trailing numbers and spaces (like the shell script)
-        base = name_no_ext
-        base = re.sub(r"[0-9 ]*$", "", base)
+    if result.success:
+        assert result.processed_files == len(files), f"Processed {result.processed_files} files, expected {len(files)}"
+        msg = f"Follow up commit: after rename of {date_of_operation}"
+        run_git_snapshot(dirpath, msg)
+    return result.returncode
 
-        if mode == "two-sides":
-            padded_i = str(i).zfill(padding)
-            # remove up to two trailing numeric groups separated by space/_/-
-            base = strip_trailing_number_groups(base, times=2)
-            # produce new name
-            if ext:
-                newname = f"{base}_{padded_i}.{ext}"
-            else:
-                newname = f"{base}_{padded_i}"
-            i += 1
-        else:
-            print("mode is unsupported")
-            return 1
 
-        dst = os.path.join(dirpath, newname)
-        if os.path.exists(dst):
-            print(f"Error: destination file already exists: {dst}")
-            return 1
-
-        # Print the command (dry-run). If --apply is set, actually move.
-        # Use a verbose-like output similar to `mv -v -- src dst`
-        src_quoted = f'"{f}"'
-        dst_quoted = f'"{dst}"'
-        if not apply_changes:
-            print(f"Would rename: {src_quoted} to {dst_quoted}")
-        else:
-            try:
-                shutil.move(f, dst)
-                print(f"Renamed: {f} -> {dst}")
-            except Exception as e:
-                print(f"Failed to rename {f} -> {dst}: {e}")
-                return 1
-
-    return 0
+def now() -> str:
+    return datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
 
 if __name__ == '__main__':
