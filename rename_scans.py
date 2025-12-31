@@ -2,12 +2,12 @@
 """
 Rename scanned files for two-sided scans.
 
-Usage: rename_scans.py [--mode MODE] [--apply] <folder-or-file>
---mode=two-sides    rename files of a two-sided scan as 01.ext, 02.ext... This depends on the macOS scanner: first file has no number suffix, then 1,2..., then 8 1, 8 2, 8 3, etc. Where 8 is the last page of the previous scan.
+Usage: rename_scans.py --mode MODE [--apply] <folder-or-file>
+--mode=two_sides    rename files of a two-sided scan as 01.ext, 02.ext... This depends on the macOS scanner: first file has no number suffix, then 1,2..., then 8 1, 8 2, 8 3, etc. Where 8 is the last page of the previous scan.
 
 Behavior mirrors the original shell script:
 - Creates a lightweight git snapshot in the target directory (init/add/commit) but ignores errors.
-- By default prints the mv commands (dry-run). Use --apply to actually rename.
+- By default, it prints the mv commands (dry-run). Use --apply to actually rename.
 """
 import argparse
 import datetime
