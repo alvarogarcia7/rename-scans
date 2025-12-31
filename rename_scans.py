@@ -10,13 +10,9 @@ Behavior mirrors the original shell script:
 - By default prints the mv commands (dry-run). Use --apply to actually rename.
 """
 import argparse
-import contextlib
-import dataclasses
 import datetime
-import itertools
 import os
 import re
-import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -63,6 +59,7 @@ def run_git_snapshot(dirpath, msg):
     subprocess.run(["git", "commit", "--allow-empty", "-am", msg], cwd=dirpath, check=True)
     assert result.returncode == 0, f"git commit failed: {result.stderr} - {result.stdout}"
 
+
 def main(argv=None):
     if argv is None:
         argv = sys.argv[1:]
@@ -96,13 +93,10 @@ def main(argv=None):
     # Exclude files if they belong to an array
     excluded_files = [".DS_Store", ".gitignore", "Thumbs.db"]
     files = [f for f in files if os.path.basename(f) not in excluded_files]
-    
-    
 
     # Remove trailing slash
     dirpath = dirpath.rstrip("/")
     dir = Path(dirpath)
-
 
     date_of_operation = now()
     msg = f"initial commit: before rename of {date_of_operation}"
@@ -128,4 +122,3 @@ def now() -> str:
 
 if __name__ == '__main__':
     sys.exit(main())
-
