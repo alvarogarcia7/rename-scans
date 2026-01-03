@@ -55,6 +55,8 @@ class TestE2ERenameScans(unittest.TestCase):
     def test_script_dry_run_on_single_file(self) -> None:
         self.create_test_file("document.pdf")
         result = self.run_script("two_sides", apply=False)
+        print(result.stdout)
+        print(result.stderr)
         self.assertEqual(0, result.returncode)
         self.assertIn("Would rename", result.stdout)
 
