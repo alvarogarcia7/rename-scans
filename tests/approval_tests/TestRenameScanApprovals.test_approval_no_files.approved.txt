@@ -1,0 +1,6 @@
+Return Code: 0
+Processed Files: 0
+Success: True
+
+Messages:
+  No files to rename

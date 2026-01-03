@@ -1,0 +1,10 @@
+Return Code: 0
+Processed Files: 3
+Success: True
+
+Messages:
+  Would rename: scana.pdf to scana_1.pdf
+  Would rename: scanc_8_1.pdf to scanc_8__2.pdf
+  Would rename: scanb_1.pdf to scanb__3.pdf
+  Total files renamed: 3
+  Success.

@@ -1,0 +1,8 @@
+Return Code: 0
+Processed Files: 1
+Success: True
+
+Messages:
+  Would rename: document.pdf to document_1.pdf
+  Total files renamed: 1
+  Success.
