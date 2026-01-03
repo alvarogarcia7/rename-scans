@@ -34,6 +34,8 @@ class TestE2ERenameScans(unittest.TestCase):
             cmd.insert(3, "--apply")
         env = os.environ.copy()
         result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+        print(result.stdout)
+        print(result.stderr)
         return result
 
     def test_script_requires_mode(self) -> None:
