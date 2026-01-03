@@ -12,6 +12,9 @@ class TestE2ERenameScans(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.dirpath = self.temp_dir.name
         self.script = os.path.abspath("rename_scans.py")
+        subprocess.run("git init .".split(" "), cwd=self.temp_dir.name)
+        subprocess.run("git config user.email you@example.com".split(" "))
+        subprocess.run("git config user.name 'Your Name'".split(" "))
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
