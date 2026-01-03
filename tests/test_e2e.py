@@ -22,7 +22,9 @@ class TestE2ERenameScans(unittest.TestCase):
 
     def run_script(self, mode: str, apply: bool = False) -> subprocess.CompletedProcess[str]:
         cmd = [
-            "python3",
+            "uv",
+            "run",
+            "python",
             self.script,
             "--mode",
             mode,
