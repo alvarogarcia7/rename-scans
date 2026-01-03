@@ -21,10 +21,10 @@ from app.domain import MoveResult
 from app.mode_two_sides import two_sides
 
 
-def natural_key(s: str):
+def natural_key(s: str) -> list[int | str]:
     """Split string into list of strings and ints for natural/version sorting."""
     parts = re.split(r'(\d+)', s)
-    key = []
+    key: list[int | str] = []
     for p in parts:
         if p.isdigit():
             key.append(int(p))
@@ -33,9 +33,9 @@ def natural_key(s: str):
     return key
 
 
-def find_files_in_dir(dirpath):
+def find_files_in_dir(dirpath: str) -> list[str]:
     # List regular files in dir (no recursion)
-    entries = []
+    entries: list[str] = []
     with os.scandir(dirpath) as it:
         for ent in it:
             if ent.is_file():
@@ -45,22 +45,22 @@ def find_files_in_dir(dirpath):
     return entries
 
 
-def run_git_snapshot(dirpath, msg):
+def run_git_snapshot(dirpath: str, msg: str) -> None:
     # Try to create a minimal snapshot similar to the shell script; ignore failures
     result = subprocess.run(["git", "init", "."], cwd=dirpath, check=True)
-    assert result.returncode == 0, f"git init failed: {result.stderr} - {result.stdout}"
+    assert result.returncode == 0, f"git init failed"
     result = subprocess.run(["git", "add", "-f", "."], cwd=dirpath)
     if result.returncode == 0:
         pass
     elif result.returncode == 1:
         print("No new files to commit, skipping git add")
     else:
-        print(f"Warning: git add failed: {result.stderr} - {result.stdout}")
-    subprocess.run(["git", "commit", "--allow-empty", "-am", msg], cwd=dirpath, check=True)
-    assert result.returncode == 0, f"git commit failed: {result.stderr} - {result.stdout}"
+        print(f"Warning: git add failed")
+    result = subprocess.run(["git", "commit", "--allow-empty", "-am", msg], cwd=dirpath, check=True)
+    assert result.returncode == 0, f"git commit failed"
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
 

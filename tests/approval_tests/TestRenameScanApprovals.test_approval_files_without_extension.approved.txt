@@ -1,0 +1,9 @@
+Return Code: 0
+Processed Files: 2
+Success: True
+
+Messages:
+  Would rename: documenta to documenta_1
+  Would rename: documentb_1 to documentb__2
+  Total files renamed: 2
+  Success.

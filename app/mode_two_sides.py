@@ -90,7 +90,7 @@ def two_sides(files: list[str], dirpath: Path, apply_changes: bool) -> MoveResul
         dst = os.path.join(dirpath, newname)
         if os.path.exists(dst):
             print(f"Error: destination file already exists: {dst}")
-            return MoveResult(1, messages=[f"Destination file already exists: {dst}"])
+            return MoveResult(1, 0, messages=[f"Destination file already exists: {dst}"])
 
         # Print the command (dry-run). If --apply is set, actually move.
         # Use a verbose-like output similar to `mv -v -- src dst`

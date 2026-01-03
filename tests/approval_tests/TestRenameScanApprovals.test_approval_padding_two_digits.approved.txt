@@ -1,0 +1,17 @@
+Return Code: 0
+Processed Files: 10
+Success: True
+
+Messages:
+  Would rename: doc_0.pdf to doc__01.pdf
+  Would rename: doc_1.pdf to doc__02.pdf
+  Would rename: doc_2.pdf to doc__03.pdf
+  Would rename: doc_3.pdf to doc__04.pdf
+  Would rename: doc_4.pdf to doc__05.pdf
+  Would rename: doc_5.pdf to doc__06.pdf
+  Would rename: doc_6.pdf to doc__07.pdf
+  Would rename: doc_7.pdf to doc__08.pdf
+  Would rename: doc_8.pdf to doc__09.pdf
+  Would rename: doc_9.pdf to doc__10.pdf
+  Total files renamed: 10
+  Success.

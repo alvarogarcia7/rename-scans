@@ -1,0 +1,11 @@
+Return Code: 0
+Processed Files: 4
+Success: True
+
+Messages:
+  Would rename: pagea.pdf to pagea_1.pdf
+  Would rename: paged_8_1.gif to paged_8__2.gif
+  Would rename: pageb_1.jpg to pageb__3.jpg
+  Would rename: pagec_2.png to pagec__4.png
+  Total files renamed: 4
+  Success.
